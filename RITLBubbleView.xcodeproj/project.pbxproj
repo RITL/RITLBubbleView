@@ -13,6 +13,7 @@
 		DBA98BA42676058400DBA4A6 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DBA98BA22676058400DBA4A6 /* Main.storyboard */; };
 		DBA98BA62676058700DBA4A6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DBA98BA52676058700DBA4A6 /* Assets.xcassets */; };
 		DBA98BA92676058700DBA4A6 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DBA98BA72676058700DBA4A6 /* LaunchScreen.storyboard */; };
+		DBA98BB12676059600DBA4A6 /* RITLBubbleContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA98BB02676059600DBA4A6 /* RITLBubbleContainerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 		DBA98BA52676058700DBA4A6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DBA98BA82676058700DBA4A6 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		DBA98BAA2676058700DBA4A6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		DBA98BB02676059600DBA4A6 /* RITLBubbleContainerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RITLBubbleContainerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +58,7 @@
 		DBA98B9B2676058400DBA4A6 /* RITLBubbleView */ = {
 			isa = PBXGroup;
 			children = (
+				DBA98BB02676059600DBA4A6 /* RITLBubbleContainerView.swift */,
 				DBA98B9C2676058400DBA4A6 /* AppDelegate.swift */,
 				DBA98B9E2676058400DBA4A6 /* SceneDelegate.swift */,
 				DBA98BA02676058400DBA4A6 /* ViewController.swift */,
@@ -137,6 +140,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DBA98BB12676059600DBA4A6 /* RITLBubbleContainerView.swift in Sources */,
 				DBA98BA12676058400DBA4A6 /* ViewController.swift in Sources */,
 				DBA98B9D2676058400DBA4A6 /* AppDelegate.swift in Sources */,
 				DBA98B9F2676058400DBA4A6 /* SceneDelegate.swift in Sources */,
