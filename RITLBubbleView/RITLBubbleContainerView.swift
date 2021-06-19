@@ -12,9 +12,10 @@ private extension RITLBubbleContainerView.RITLBubbleType {
     /// 大小
     func diameter() -> CGFloat {
         switch self {
-        case .short: return 30
-        case .middle: return 45
-        case .large: return 60
+        case .short: return 45
+        case .regular: return 52
+        case .meduim: return 60
+        case .large: return 68
         case .custom(let diameter, _): return diameter
         }
     }
@@ -23,15 +24,18 @@ private extension RITLBubbleContainerView.RITLBubbleType {
     func font() -> UIFont {
         switch self {
         case .short: return UIFont.systemFont(ofSize: 10, weight: .medium)
-        case .middle, .large: return UIFont.systemFont(ofSize: 14, weight: .medium)
+        case .regular: return UIFont.systemFont(ofSize: 11, weight: .medium)
+        case .meduim: return UIFont.systemFont(ofSize: 12, weight: .medium)
+        case .large: return UIFont.systemFont(ofSize: 14, weight: .medium)
         case .custom(_, let font): return font
         }
     }
 }
 
 
+
 /// RITLBubbleContainerView 中的漂浮物视图
-class RITLBubbleItemView: UIView {
+public class RITLBubbleItemView: UIView {
     
     /// 显示的背景图片
     let imageView = UIImageView()
@@ -113,7 +117,7 @@ class RITLBubbleItemView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    override func layoutSubviews() {
+    public override func layoutSubviews() {
         super.layoutSubviews()
         imageView.layer.cornerRadius = imageView.bounds.width / 2.0
     }
@@ -121,37 +125,42 @@ class RITLBubbleItemView: UIView {
 
 
 
-protocol THBubbleDelegate: AnyObject {
+public protocol RITLBubbleDelegate: AnyObject {
     
     /// bubbleItemView点击的回调
     /// 需要手动去remove
-    func bubbleContainerView(view: RITLBubbleContainerView, didSelectAt index: Int)
+    /// - Parameters:
+    ///   - index: 该索引调用view.remove
+    ///   - item: 点击回调的数据源
+    func bubbleContainerView(view: RITLBubbleContainerView, didSelectAt index: Int, item: RITLBubbleItem)
     /// 全部已经清楚的回调
     func bubbleContainerView(allClear view: RITLBubbleContainerView)
 }
 
-extension THBubbleDelegate {
+public extension RITLBubbleDelegate {
     
-    func bubbleContainerView(view: RITLBubbleContainerView, didSelectAt index: Int) {}
+    func bubbleContainerView(view: RITLBubbleContainerView, didSelectAt index: Int, item: RITLBubbleItem) {}
     func bubbleContainerView(allClear view: RITLBubbleContainerView) {}
 }
 
 /// title为漂浮物中间的文本
 /// subtitle为底部的文本
-typealias THBubbleItem = (title: String, subtitle: String, type: RITLBubbleContainerView.RITLBubbleType)
+public typealias RITLBubbleItem = (id: String, title: String, subtitle: String, type: RITLBubbleContainerView.RITLBubbleType)
 
 /// 青碳行的泡泡容器
-final class RITLBubbleContainerView: UIView {
+public final class RITLBubbleContainerView: UIView {
     
     /// 基础的tag
     private static let RITLBubbleSubviewsBaseTag = 10000
 
     /// 泡泡的类型
-    enum RITLBubbleType {
+    public enum RITLBubbleType {
         /// 默认的小
         case short
+        /// 默认的正常
+        case regular
         /// 默认的中
-        case middle
+        case meduim
         /// 默认的大
         case large
         /// 自定义的直径(大小为漂浮物图片的直径，不包含底部的描述文本)
@@ -162,10 +171,34 @@ final class RITLBubbleContainerView: UIView {
         
     // public
     
-    weak var delegate: THBubbleDelegate?
+    public weak var delegate: RITLBubbleDelegate?
+    
+    /// 是否可以存在遮盖
+    /// 默认为false 不能遮盖
+    /// 如果实在无法完全独立，可能会存在循环问题，可以使用 retriesCount 和 offsetRatio 参数进行摇摆设置
+    /// 如果该参数为true,则不会进行重试
+    public var coverable = false
+    
+    /// 重试次数
+    /// 当随机生成后，存在遮盖时的重试次数
+    /// 默认为 -1 表示会一直重试，可能会在 contentRect 设置不合理时出现无限循环
+    public var retriesCount = -1
+    
+    /// 位置的摇摆误差（不遮盖的比例）
+    /// 只有当达到 retriesCount 时才会进行比例摇摆
+    /// 两个泡泡允许存在的误差比例，可选范围: [0.0, 1.0]
+    /// 0.0 表示可以完全重合；1.0 表示完全不重合
+    /// 默认为 1.0
+    public var offsetRatio: CGFloat = 1.0 {
+        didSet {
+            if offsetRatio < 0 || offsetRatio > 1 {
+                fatalError("retriesProgress 设置错误!")
+            }
+        }
+    }
     
     /// 四周的间距
-    var margin: UIEdgeInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5) {
+    public var margin: UIEdgeInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5) {
         didSet {
             if margin.left < 0 || margin.top < 0 || margin.right < 0 || margin.bottom < 0  {
                 fatalError("margin 设置非法!")
@@ -173,7 +206,7 @@ final class RITLBubbleContainerView: UIView {
         }
     }
     /// 每个漂浮物的间距
-    var bubbleMargin: CGFloat = 5 {
+    public var bubbleMargin: CGFloat = 5 {
         didSet {
             if bubbleMargin < 0 {
                 fatalError("margin 设置非法!")
@@ -183,7 +216,7 @@ final class RITLBubbleContainerView: UIView {
     /// 设置区域，用于计算
     /// 如果使用frame布局，将bounds设置即可
     /// 如果使用约束布局，将计算后的bounds设置完毕，在进行设置
-    var contentRect: CGRect = .zero {
+    public var contentRect: CGRect = .zero {
         didSet {
             if contentRect.width < 0 || contentRect.height < 0 {
                 fatalError("contentRect 设置非法!")
@@ -192,7 +225,7 @@ final class RITLBubbleContainerView: UIView {
     }
     
     /// 设置初始化数据
-    func setItems(items: [THBubbleItem]) {
+    public func setItems(items: [RITLBubbleItem]) {
         //移除所有的漂浮物
         removeAll()
         //赋值并创建
@@ -202,12 +235,19 @@ final class RITLBubbleContainerView: UIView {
         }
     }
     
+    
+    /// 添加数据
+    public func appendItem(item: RITLBubbleItem) {
+        items.append(item)
+        create(item: item)
+    }
+    
     /// 创建一个漂浮物
     /// - Parameters:
     ///   - item: 存放的数据item
     ///   - title: 泡泡中间显示的文本
     ///   - subtitle: 泡泡底部展示的文本
-    func create(item: THBubbleItem) {
+    private func create(item: RITLBubbleItem) {
         let diameter = item.type.diameter() + diameterExternSpace/*底部的文本高度*/
         //获得垂直随机位置
         let minY = margin.top + diameter * 0.5 + bubbleMargin
@@ -220,13 +260,34 @@ final class RITLBubbleContainerView: UIView {
         let x = CGFloat(random(from: minX, to: maxX))
         let y = CGFloat(random(from: minY, to: maxY))
         //开始追加验证
-        for center in centers {
-            ///两个点之间的距离如果小于等于 diameter + bubbleMargin;则退出重新生成
-            if (CGFloat(sqrtf(pow(Float(center.x - x), 2) + pow(Float((center.y) - y), 2))) <= diameter + bubbleMargin) {
-                //重新生成，return即可
-                create(item: item); return
+        // 如果不允许覆盖，进行验证
+        if !coverable {
+            for center in centers {
+                // 两个点之间的距离
+                let currentDistance = CGFloat(sqrtf(pow(Float(center.x - x), 2) + pow(Float((center.y) - y), 2)))
+                // 如果小于等于 diameter + bubbleMargin, 目前存在重叠
+                if (currentDistance <= diameter + bubbleMargin) {
+                    // 如果重试次数小于0，则无限重试
+                    if retriesCount <= 0 {
+                        create(item: item); return
+                    }
+                    // 如果重试次数没有达到最大的数量，则进行计数增加，重试
+                    if (cacheCount[item.id] ?? -1) <= retriesCount {
+                        let value = cacheCount[item.id] ?? 0
+                        cacheCount[item.id] = value + 1
+                        create(item: item); return
+                    }
+                    // 如果允许重试并且重试的次数已经大于了规范化的重试，则进行误差比例的权衡
+                    // 再次进行比对,符合存在误差的偏移，直接使用即可
+                    if currentDistance >= ((diameter + bubbleMargin) * offsetRatio) {
+                        break
+                    }
+                    //重置
+                    create(item: item); return
+                }
             }
         }
+
         //存储中心点
         let center = CGPoint(x: x, y: y)
         centers.append(center)
@@ -239,7 +300,7 @@ final class RITLBubbleContainerView: UIView {
         //记录视图
         allItemViews.append(view)
         //设置tag
-        view.tag = RITLBubbleContainerView.RITLBubbleSubviewsBaseTag + (allItemViews.firstIndex(of: view) ?? 1)
+        view.tag = RITLBubbleContainerView.RITLBubbleSubviewsBaseTag + (items.firstIndex { $0.id == item.id } ?? 1)
         //设置数据
         view.middleLabel.font = item.type.font()
         view.middleLabel.text = item.title
@@ -254,7 +315,7 @@ final class RITLBubbleContainerView: UIView {
     
     /// 移除当前索引的漂浮物
     /// - Parameter index: 索引
-    func remove(index: Int) {
+    public func remove(index: Int) {
         //获得tag
         let tag = RITLBubbleContainerView.RITLBubbleSubviewsBaseTag + index
         //选取view
@@ -272,6 +333,10 @@ final class RITLBubbleContainerView: UIView {
             self.allItemViews.removeAll { subview in
                 return subview.tag == view.tag
             }
+            //移除中心点
+            self.centers.removeAll { center in
+                return center == view.center
+            }
             //如果所有的不在了，执行回调即可
             if self.allItemViews.isEmpty {
                 self.delegate?.bubbleContainerView(allClear: self)
@@ -281,7 +346,7 @@ final class RITLBubbleContainerView: UIView {
     
     
     /// 移除所有的漂浮物
-    func removeAll() {
+    public func removeAll() {
         for view in allItemViews {
             view.removeFromSuperview()
         }
@@ -289,6 +354,7 @@ final class RITLBubbleContainerView: UIView {
         allItemViews.removeAll()
         centers.removeAll()
         items.removeAll()
+        cacheCount.removeAll()
     }
     
     
@@ -304,7 +370,7 @@ final class RITLBubbleContainerView: UIView {
             //进行点击回调
             guard bubbleItemView.tag >= RITLBubbleContainerView.RITLBubbleSubviewsBaseTag else { return }
             let index = bubbleItemView.tag - RITLBubbleContainerView.RITLBubbleSubviewsBaseTag
-            self.delegate?.bubbleContainerView(view: self, didSelectAt: index)
+            self.delegate?.bubbleContainerView(view: self, didSelectAt: index, item: self.items[index])
         }
     }
     
@@ -319,7 +385,9 @@ final class RITLBubbleContainerView: UIView {
     /// 存储所有的按钮
     private var allItemViews = [UIView]()
     /// 存储所有的数据源
-    private(set) var items = [THBubbleItem]()
+    private(set) var items = [RITLBubbleItem]()
+    /// 用于缓存生成次数
+    private var cacheCount = [String: Int]()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
